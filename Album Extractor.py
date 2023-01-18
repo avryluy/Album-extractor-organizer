@@ -1,11 +1,11 @@
 import time as time
-import os as os
+from pathlib import Path as path
 import shutil as sht
 
 #Declare Downloads path
-
+downloadFolder = ""
 #Declare music library path
-
+musicLibrary = ""
 #Check for zip files. Determine how many there are.
 
 #Store zip type in a variable
@@ -17,6 +17,7 @@ import shutil as sht
 #splice zip name to get album name, store in variable
 
 #For each zip, Unpack the zipfile into a directory of the zips name
+path.mkdir
 
 #For each zip, Check music library for directory of the album name. Return bool
 
