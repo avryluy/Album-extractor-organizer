@@ -1,12 +1,27 @@
 import time as time
-from pathlib import Path as path
+import pathlib as path
 import shutil as sht
 
 #Declare Downloads path
-downloadFolder = ""
+downloadFolder = path.Path(r"C:\Users\avryl\Downloads\AlbumExtractor")
 #Declare music library path
 musicLibrary = ""
 #Check for zip files. Determine how many there are.
+def zipCounter():
+    count = 0
+    for child in downloadFolder.iterdir():
+            childstype = child.suffix
+            if childstype == ".zip":
+                count += 1
+            else: count += 0
+    if  count == 1:
+        print("There is 1 zip to be unpacked.")
+    elif count == 0:
+        print("There are no zips to be unpacked.")
+    else:
+        print("There are {} zips to be unpacked.".format(count))
+
+zipCounter()
 
 #Store zip type in a variable
 
@@ -17,7 +32,7 @@ musicLibrary = ""
 #splice zip name to get album name, store in variable
 
 #For each zip, Unpack the zipfile into a directory of the zips name
-path.mkdir
+###path.mkdir
 
 #For each zip, Check music library for directory of the album name. Return bool
 
