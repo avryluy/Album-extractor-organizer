@@ -121,16 +121,8 @@ def fileRename(fileRenamePath):
             file.rename(newNamePath)
             print("Files renamed.")
 
-# def openFolder(finalPath):
-#         if userInput not in answers:
-#             "Input not accepted. Try again."
-#         elif userInput == "Y":
-#             os.startfile(finalPath)
-#             folderOpen = False
-#             break
-#         elif userInput == "N":
-#             folderOpen = False
-#             break
+def openFolder(finalPath):
+    os.startfile(finalPath)
 
             
 run = True
@@ -142,13 +134,19 @@ while (run):
         break
     else:
         print("******")
-        zipManager(downloadPath)
+        allPaths = zipManager(downloadPath)
         print("******")
-        # userInput = input("Do you want to open your library? Y/N \n")
-        # userInput = userInput.upper()
-        # openFolder(musicLibrary)
-        run = False
+    
+    userInput = input("Do you want to open your library? Y/N \n")
+    userInput = userInput.upper()
+    if userInput == "Y":
+        for i in allPaths:
+            openFolder(i)
+    else:
+        print("Process completed.")
         break
+        
+
 
 
 #delete zip file in downloads folder
