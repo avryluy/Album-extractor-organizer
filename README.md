@@ -23,7 +23,7 @@ downloadPath = path.Path(r"path/to/directory")
 ```
 4. Set your music library path:
 ```py
-musicLibrary = path.Path(r"C:\Users\avryl\Music")
+musicLibrary = path.Path(r"path/to/directory")
 ```
 5. Save and close
 6. Use the win+R command to open the run window
