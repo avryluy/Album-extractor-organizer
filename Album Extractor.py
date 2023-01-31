@@ -119,6 +119,7 @@ run = True
 while (run):
     
     if zipCounter(downloadPath) == 0:
+        input("Press enter to exit....")
         run = False
         break
     else:
@@ -126,5 +127,5 @@ while (run):
         allPaths = zipManager(downloadPath)
         print("******")
     print("Process completed.")
-    input("Press any key to exit....")
+    input("Press enter to exit....")
     run = False
