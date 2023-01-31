@@ -3,7 +3,6 @@ import pathlib as path
 import shutil as sht
 import os as os
 
-
 #Declare Downloads path
 downloadPath = path.Path(r"C:\Users\avryl\Downloads\AlbumExtractor")
 #Declare music library path
@@ -11,43 +10,36 @@ musicLibrary = path.Path(r"C:\Users\avryl\Music")
 downloadFolder = str(downloadPath)
 #Store zip type in a variable
 zipSuffix = ".zip"
-
+#Declare audio extensions
+audioExtension = (".wav",".mp3",".aac",".flac",".ogg",".alac",".aiff")
 def pathStatSize(x):
     xDir = os.listdir(x)
-    pathSize  = len(xDir)
+    pathSize = len(xDir)
     return pathSize
 
 #Check for zip files. Determine how many there are.
-def zipCounter():
+def zipCounter(zipCountPath):
+    # global count 
     count = 0
-    for child in downloadPath.iterdir():
+    for child in zipCountPath.iterdir():
         childstype = child.suffix
         if childstype == ".zip":
             count += 1
         else: count += 0
         #splice zip name to get Artist
-        print(child.name.split(".")[0])
-        #store zip path in a variable
-        childPath = downloadPath / child
-        # print(childPath)
+        # print(child.name.split(".")[0])
     if  count == 1:
         print("There is 1 zip to be unpacked.")
     elif count == 0:
         print("There are no zips to be unpacked.")
     else:
         print("There are {} zips to be unpacked.".format(count))
+    return count
 
-
-
-def zipManager():
-    for child in downloadPath.iterdir():
+def zipManager(zipManPath):
+    for child in zipManPath.iterdir():
+        albumsList = []
         if child.match("*.zip") == True:
-            #store zip path in a variable
-            childPath = downloadPath / child
-            print(childPath)
-            #Unpack the zipfile into a directory of the zips name
-            sht.unpack_archive(childPath,downloadPath,"zip")
-            print("Album Extracted")
             global folderName
             folderName = child.name.split(".")[0]
             #splice zip name to get Artist, store in variable
@@ -59,24 +51,40 @@ def zipManager():
             #capture path of extracted folder
             global extractFolder
             extractFolder = downloadPath / folderName
-            print("******")
+            os.mkdir(extractFolder)
             #Capture Music Library Artist Path
             global artistPath 
             artistPath =  musicLibrary / artistName
+            #store zip path in a variable
+            childPath = downloadPath / child
+            #Unpack the zipfile into a directory of the zips name
+            sht.unpack_archive(childPath,extractFolder,"zip")
+            print("Album Extracted")
             #Check if artist folder exists
             artistCheck = artistPath.exists()
+            #Create Artist folder if it doesn't exist
             if artistCheck == False:
                 print("Artist directory doesn't exist. Creating...")
-                #Create Artist folder if it doesn't exist
                 artistPath.mkdir()
                 print("Done.")
             #Capture Music Library Album Path
             global albumPath
             albumPath = artistPath / albumName
+            #Create path for album folders that aren't cleaned up
+            badFolderPath = artistPath / folderName
             #check if album exists
             albumCheck = albumPath.exists()
-            #For each zip, Check music library for directory of the album name. Return bool
-            if albumCheck == False:
+            #check if uncleaned album exists
+            badFolderCheck = badFolderPath.exists()
+            if badFolderCheck == True and (pathStatSize(badFolderPath) == 0):
+                print("Badly named album exists and is empty.")
+                sht.rmtree(badFolderPath)
+                sht.move(extractFolder, albumPath)
+            elif badFolderCheck  == True and (pathStatSize(badFolderPath) > 0):
+                print("Badly named album exists and is populated.")
+                sht.move(badFolderPath, albumPath)
+                sht.rmtree(extractFolder)
+            elif albumCheck == False:
                 print("Moving files...")
                 #Move new directory in Artist directory
                 sht.move(extractFolder, albumPath)
@@ -85,19 +93,17 @@ def zipManager():
             elif albumCheck == True and (pathStatSize(albumPath) == 0):
                 print("Folder exists but nothing is inside. Copying...")
                 sht.copytree(extractFolder, albumPath, dirs_exist_ok=True)
+                sht.rmtree(extractFolder)
                 print("Done.")
             else:
-                #Return "Album already exists."
                 print("Album already exists here.")
                 sht.rmtree(extractFolder)
             os.remove(childPath)
         print("Download Directory cleaned.")
 
-audioExtension = (".wav",".mp3",".aac",".flac")
-
 #iterate over files to strip Artist + Album name from file name. LEAVE TRACK NUMBER
-def fileRename():
-    for file in albumPath.iterdir():
+def fileRename(fileRenamePath):
+    for file in fileRenamePath.iterdir():
         filePart = str(file.suffix) 
         nameStrip = artistName + " - " + albumName + " - "
         newName = file.name.replace(nameStrip,"")
@@ -107,18 +113,40 @@ def fileRename():
             break
         elif filePart in audioExtension and pathStatSize(albumPath) > 0:
             file.rename(newNamePath)
-            print("Renamed existing files.")
+            # print("Renamed existing files.")
         else:
             file.rename(newNamePath)
             print("Files renamed.")
 
+# def openFolder(finalPath):
+#         if userInput not in answers:
+#             "Input not accepted. Try again."
+#         elif userInput == "Y":
+#             os.startfile(finalPath)
+#             folderOpen = False
+#             break
+#         elif userInput == "N":
+#             folderOpen = False
+#             break
 
-zipCounter()
-print("******")
+            
+run = True
 
-zipManager()
-print("******")
-fileRename()
+while (run):
+    
+    if zipCounter(downloadPath) == 0:
+        run = False
+        break
+    else:
+        print("******")
+        zipManager(downloadPath)
+        print("******")
+        fileRename(albumPath)
+        # userInput = input("Do you want to open your library? Y/N \n")
+        # userInput = userInput.upper()
+        # openFolder(musicLibrary)
+        run = False
+        break
 
 
 #delete zip file in downloads folder
