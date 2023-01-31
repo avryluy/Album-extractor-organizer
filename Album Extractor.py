@@ -1,4 +1,3 @@
-import time as time
 import pathlib as path
 import shutil as sht
 import os as os
@@ -27,7 +26,6 @@ def zipCounter(zipCountPath):
             count += 1
         else: count += 0
         #splice zip name to get Artist
-        # print(child.name.split(".")[0])
     if  count == 1:
         print("There is 1 zip to be unpacked.")
     elif count == 0:
@@ -38,7 +36,6 @@ def zipCounter(zipCountPath):
 
 def zipManager(zipManPath):
     for child in zipManPath.iterdir():
-        albumsList = []
         if child.match("*.zip") == True:
             global folderName
             folderName = child.name.split(".")[0]
@@ -88,21 +85,17 @@ def zipManager(zipManPath):
                 print("Moving files...")
                 #Move new directory in Artist directory
                 sht.move(extractFolder, albumPath)
-                print("Done.")
             #If album folder exists but is empty, populate it with files.
             elif albumCheck == True and (pathStatSize(albumPath) == 0):
                 print("Folder exists but nothing is inside. Copying...")
                 sht.copytree(extractFolder, albumPath, dirs_exist_ok=True)
                 sht.rmtree(extractFolder)
-                print("Done.")
             else:
                 print("Album already exists here.")
                 sht.rmtree(extractFolder)
             os.remove(childPath)
-        albumsList.append(albumPath)
         fileRename(albumPath)
         print("Download Directory cleaned.")
-        return tuple(albumsList)
 
 #iterate over files to strip Artist + Album name from file name. LEAVE TRACK NUMBER
 def fileRename(fileRenamePath):
@@ -120,10 +113,6 @@ def fileRename(fileRenamePath):
         else:
             file.rename(newNamePath)
             print("Files renamed.")
-
-def openFolder(finalPath):
-    os.startfile(finalPath)
-
             
 run = True
 
@@ -136,32 +125,5 @@ while (run):
         print("******")
         allPaths = zipManager(downloadPath)
         print("******")
-    
-    userInput = input("Do you want to open your library? Y/N \n")
-    userInput = userInput.upper()
-    if userInput == "Y":
-        for i in allPaths:
-            openFolder(i)
-    else:
-        print("Process completed.")
-        break
-        
-
-
-
-#delete zip file in downloads folder
-
-
-#Ask to open location
-#*IF YES* Open location and exit program
-#*IF NO* Exit program 
-
-#***IF TRUE***
-
-
-
-#Ask to if files should be deleted?
-
-#*IF YES* delete new directory with files
-
-#*IF NO* Exit program
+    print("Process completed.")
+    run = False
