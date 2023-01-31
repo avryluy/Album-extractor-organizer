@@ -99,7 +99,10 @@ def zipManager(zipManPath):
                 print("Album already exists here.")
                 sht.rmtree(extractFolder)
             os.remove(childPath)
+        albumsList.append(albumPath)
+        fileRename(albumPath)
         print("Download Directory cleaned.")
+        return tuple(albumsList)
 
 #iterate over files to strip Artist + Album name from file name. LEAVE TRACK NUMBER
 def fileRename(fileRenamePath):
@@ -141,7 +144,6 @@ while (run):
         print("******")
         zipManager(downloadPath)
         print("******")
-        fileRename(albumPath)
         # userInput = input("Do you want to open your library? Y/N \n")
         # userInput = userInput.upper()
         # openFolder(musicLibrary)
