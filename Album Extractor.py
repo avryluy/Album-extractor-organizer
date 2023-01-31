@@ -3,9 +3,9 @@ import shutil as sht
 import os as os
 
 #Declare Downloads path
-downloadPath = path.Path(r"C:\Users\avryl\Downloads\AlbumExtractor")
+downloadPath = path.Path(r"path/to/directory")
 #Declare music library path
-musicLibrary = path.Path(r"C:\Users\avryl\Music")
+musicLibrary = path.Path(r"path/to/directory")
 downloadFolder = str(downloadPath)
 #Store zip type in a variable
 zipSuffix = ".zip"
@@ -126,4 +126,5 @@ while (run):
         allPaths = zipManager(downloadPath)
         print("******")
     print("Process completed.")
+    input("Press any key to exit....")
     run = False
