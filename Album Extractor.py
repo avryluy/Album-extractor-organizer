@@ -53,6 +53,7 @@ def zipManager(zipManPath):
             albumName = folderName.split(" - ")[1]
             # capture path of extracted folder
             global extractFolder
+            print("Evaluating {} by {}").format(albumName, artistName)
             extractFolder = downloadPath / folderName
             os.mkdir(extractFolder)
             # Capture Music Library Artist Path
@@ -66,7 +67,7 @@ def zipManager(zipManPath):
             # Check if artist folder exists
             artistCheck = artistPath.exists()
             # Create Artist folder if it doesn't exist
-            if artistCheck == False:
+            if artistCheck is False:
                 print("Artist directory doesn't exist. Creating...")
                 artistPath.mkdir()
                 print("Done.")
@@ -79,20 +80,20 @@ def zipManager(zipManPath):
             albumCheck = albumPath.exists()
             # check if uncleaned album exists
             badFolderCheck = badFolderPath.exists()
-            if badFolderCheck == True and (pathStatSize(badFolderPath) == 0):
+            if badFolderCheck is True and (pathStatSize(badFolderPath) == 0):
                 print("Badly named album exists and is empty.")
                 sht.rmtree(badFolderPath)
                 sht.move(extractFolder, albumPath)
-            elif badFolderCheck == True and (pathStatSize(badFolderPath) > 0):
+            elif badFolderCheck is True and (pathStatSize(badFolderPath) > 0):
                 print("Badly named album exists and is populated.")
                 sht.move(badFolderPath, albumPath)
                 sht.rmtree(extractFolder)
-            elif albumCheck == False:
+            elif albumCheck is False:
                 print("Moving files...")
                 # Move new directory in Artist directory
                 sht.move(extractFolder, albumPath)
             # If album folder exists but is empty, populate it with files.
-            elif albumCheck == True and (pathStatSize(albumPath) == 0):
+            elif albumCheck is True and (pathStatSize(albumPath) == 0):
                 print("Folder exists but nothing is inside. Copying...")
                 sht.copytree(extractFolder, albumPath, dirs_exist_ok=True)
                 sht.rmtree(extractFolder)
