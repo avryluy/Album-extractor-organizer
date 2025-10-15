@@ -59,18 +59,18 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
         print(f"Safe extraction Failed: {e.with_traceback}")
 
 
-def should_skip_album(zip_path: Path, destination_path: Path) -> bool:
+def should_skip_album(unpacked_path: Path, destination_path: Path) -> bool:
     if not destination_path.exists():
         return False
 
-    zip_size = get_zip_size(zip_path)
+    unpacked_size = get_dir_size(unpacked_path)
     destination_size = get_dir_size(destination_path)
 
-    difference = abs(zip_size - destination_size)
+    difference = abs(unpacked_size - destination_size)
 
     if difference < 1024 * 10:
         print(
-            f"Skipping {destination_path.name}. Zip & Destination are the same size {zip_size} | {destination_size}."
+            f"Skipping {destination_path.name}. Zip & Destination are the same size {unpacked_size} | {destination_size}."
         )
         return True
 
@@ -85,7 +85,10 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
             artist, album, track = name_parts
             # print(f"Aritst: {artist}, Album: {album}, Track: {track}")
         else:
-            track = member.name
+            name_parts = member.parts[-2:]
+            print(f"parts: {name_parts}")
+            artist, album = name_parts[0].split(" - ")
+            track = name_parts[1]
 
         artist_folder = library_path / sanitize_name(artist)
         album_folder = artist_folder / sanitize_name(album)
@@ -96,8 +99,12 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
 
         if not album_folder.exists():
             album_folder.mkdir(exist_ok=True)
+
+        if member.is_file() and track_path.exists():
+            print(f"File {member.name} exists.\nSkipping...\n")
+
         print(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
-        # shutil.move(member, )
+        shutil.move(member, track_path)
     return
 
 
@@ -133,7 +140,7 @@ def main() -> int:
                 print(f"Error extracting album: {e.with_traceback}")
         artist, album = zip_path.stem.split(" - ")
         album_destination = DESTINATION_DIRECTORY / artist / album
-        print(f"Pull aritst from zip_path var: {artist}")
+        # print(f"Pull aritst from zip_path var: {artist}")
         if should_skip_album(zip_path, album_destination) is True:
             print(
                 f"Album being skipped due to already being in library: {album_destination}"
@@ -141,7 +148,7 @@ def main() -> int:
         else:
             print(f"Album does NOT exist in library: {album_destination}")
 
-        # move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
+        move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
     return 0
 
 
