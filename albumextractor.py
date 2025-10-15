@@ -1,6 +1,6 @@
 from pathlib import Path
 import zipfile
-import shutil as sht
+import shutil
 import re
 import os as os
 
@@ -9,6 +9,7 @@ import os as os
 USER_HOME = Path.home()
 SOURCE_DIRECTORY = USER_HOME / "Desktop" / "Music_Zips"
 TEMP_FILE_DIRECTORY = SOURCE_DIRECTORY / ".temp"
+DESTINATION_DIRECTORY = USER_HOME / "Music"
 
 
 # FUNC
@@ -30,7 +31,7 @@ def get_dir_size(path: Path) -> int:
 def get_zip_size(zipPath: Path) -> int:
     total = 0
 
-    with zipfile.ZipFile(zipPath) as zf:
+    with zipfile.ZipFile(zipPath, "r") as zf:
         for info in zf.infolist():
             total += info.file_size
     return total
@@ -38,12 +39,9 @@ def get_zip_size(zipPath: Path) -> int:
 
 def safe_extract(zip_path: Path, extract_to: Path) -> None:
     # check if exists in zips dir
-    zip_dir_size = get_zip_size(zip_path)
-
-    extract_dir_size = get_dir_size(extract_to)
-
-    if not (zip_dir_size == extract_dir_size):
+    if not (extract_to.exists()):
         print(f"Album already exists in extract path: {extract_to}")
+        pass
     try:
 
         # open zip and extract
@@ -54,13 +52,52 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
                     str(member_path.resolve()).startswith(str(extract_to.resolve()))
                 ):
                     raise Exception(f"Paths not valid: {zip_path.name}: {member}")
-                print(f"Paths valid: {zip_path.name}: {member}")
+                # print(f"Paths valid: {zip_path.name}: {member}")
             zf.extractall(extract_to)
+            print(f"{zf.filename} extracted.")
     except Exception as e:
         print(f"Safe extraction Failed: {e.with_traceback}")
 
 
-def move_album_contents():
+def should_skip_album(zip_path: Path, destination_path: Path) -> bool:
+    if not destination_path.exists():
+        return False
+
+    zip_size = get_zip_size(zip_path)
+    destination_size = get_dir_size(destination_path)
+
+    difference = abs(zip_size - destination_size)
+
+    if difference < 1024 * 10:
+        print(
+            f"Skipping {destination_path.name}. Zip & Destination are the same size {zip_size} | {destination_size}."
+        )
+        return True
+
+    return False
+
+
+def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
+
+    for member in temp_file_path.rglob("*"):
+        name_parts = list(member.name.split(" - "))
+        if len(name_parts) == 3:
+            artist, album, track = name_parts
+            # print(f"Aritst: {artist}, Album: {album}, Track: {track}")
+        else:
+            track = member.name
+
+        artist_folder = library_path / sanitize_name(artist)
+        album_folder = artist_folder / sanitize_name(album)
+        track_path = album_folder / sanitize_name(track)
+
+        if not artist_folder.exists():
+            artist_folder.mkdir(exist_ok=True)
+
+        if not album_folder.exists():
+            album_folder.mkdir(exist_ok=True)
+        print(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
+        # shutil.move(member, )
     return
 
 
@@ -80,11 +117,31 @@ def main() -> int:
 
     if not zip_files:
         print("No zips to unpack. Exiting\n")
+        return 0
 
-    for files in zip_files:
-        unpack_folder = files.stem
-        print(unpack_folder)
+    for zip_path in zip_files:
+        unpack_folder = TEMP_FILE_DIRECTORY / zip_path.stem
+        if unpack_folder.exists():
+            print(f"Unpacked album already exists: {unpack_folder}")
+        else:
+            try:
+                print(f"Creating dir at: {unpack_folder}")
+                unpack_folder.mkdir(exist_ok=True)
+                safe_extract(zip_path, unpack_folder)
 
+            except Exception as e:
+                print(f"Error extracting album: {e.with_traceback}")
+        artist, album = zip_path.stem.split(" - ")
+        album_destination = DESTINATION_DIRECTORY / artist / album
+        print(f"Pull aritst from zip_path var: {artist}")
+        if should_skip_album(zip_path, album_destination) is True:
+            print(
+                f"Album being skipped due to already being in library: {album_destination}"
+            )
+        else:
+            print(f"Album does NOT exist in library: {album_destination}")
+
+        # move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
     return 0
 
 
