@@ -6,18 +6,6 @@ import logging
 
 import os as os
 
-# LOGS
-filepath = Path.cwd() / "logs" / "albumextractor.log"
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(
-    filename=filepath,
-    format="%(asctime)s, %(levelname)s, " "%(funcName)s, %(lineno)d, %(message)s",
-    encoding="utf-8",
-    level=logging.DEBUG,
-)
-
-
 # VARIABLES
 USER_HOME = Path.home()
 SOURCE_DIRECTORY = USER_HOME / "Desktop" / "Music_Zips"
@@ -31,20 +19,14 @@ file_type_pattern = re.compile(
 # FUNC
 
 
-def logger_init() -> logging.Logger:
-    return logger
-
-
 def sanitize_name(name: str) -> str:
     """Cleans folder and file names for filesystem safety."""
-    logger.critical(
-        "test message in the sanitize name func\nasldkjfalsdfal;sdflaksdjflaksjerlkjsdf"
-    )
     return re.sub(r'[<>:"/\\|?*]', "_", name.strip())
 
 
 def get_dir_size(path: Path) -> int:
     total = 0
+
     for file in path.rglob("*"):
         if file.is_file():
             total += file.stat().st_size
@@ -63,7 +45,8 @@ def get_zip_size(zipPath: Path) -> int:
 def safe_extract(zip_path: Path, extract_to: Path) -> None:
     # check if exists in zips dir
     if not (extract_to.exists()):
-        print(f"Album already exists in extract path: {extract_to}")
+        logger.info(f"Album already exists in extract path: {extract_to}")
+        # print(f"Album already exists in extract path: {extract_to}")
         pass
     try:
 
@@ -74,15 +57,19 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
                 if not (
                     str(member_path.resolve()).startswith(str(extract_to.resolve()))
                 ):
+                    logger.exception(f"Paths not valid: {zip_path.name}: {member}")
                     raise Exception(f"Paths not valid: {zip_path.name}: {member}")
 
                 if re.match(file_type_pattern, member) is None:
+                    logger.exception(f"File type not supported. {member}")
                     raise Exception(f"File type not supported. {member}")
-                # print(f"Paths valid: {zip_path.name}: {member}")
+
             zf.extractall(extract_to)
-            print(f"{zf.filename} extracted.")
+            logger.info(f"{zf.filename} extracted.")
+            # print(f"{zf.filename} extracted.")
     except Exception as e:
-        print(f"Safe extraction Failed: {e.with_traceback}")
+        logging.exception(f"Safe extraction Failed: {e.with_traceback}")
+        # print(f"Safe extraction Failed: {e.with_traceback}")
 
 
 def should_skip_album(unpacked_path: Path, destination_path: Path) -> bool:
@@ -95,9 +82,12 @@ def should_skip_album(unpacked_path: Path, destination_path: Path) -> bool:
     difference = abs(unpacked_size - destination_size)
 
     if difference < 1024 * 10:
-        print(
+        logger.info(
             f"Skipping {destination_path.name}. Zip & Destination are the same size {unpacked_size} | {destination_size}."
         )
+        # print(
+        #     f"Skipping {destination_path.name}. Zip & Destination are the same size {unpacked_size} | {destination_size}."
+        # )
         return True
 
     return False
@@ -112,7 +102,7 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
             # print(f"Aritst: {artist}, Album: {album}, Track: {track}")
         else:
             name_parts = member.parts[-2:]
-            print(f"parts: {name_parts}")
+            # print(f"parts: {name_parts}")
             artist, album = name_parts[0].split(" - ")
             track = name_parts[1]
 
@@ -127,9 +117,10 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
             album_folder.mkdir(exist_ok=True)
 
         if member.is_file() and track_path.exists():
-            print(f"File {member.name} exists.\nSkipping...\n")
-
-        print(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
+            logger.info(f"File {member.name} exists.\nSkipping...\n")
+            # print(f"File {member.name} exists.\nSkipping...\n")
+        logger.info(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
+        # print(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
         shutil.move(member, track_path)
     return
 
@@ -139,13 +130,16 @@ def cleanup_dir(path: Path) -> None:
     for files in path.rglob("*"):
         try:
             if files.is_file():
-                print(f"Deleting file: {files}")
+                logger.info(f"Deleting file: {files}")
+                # print(f"Deleting file: {files}")
                 os.remove(files)
             elif files.is_dir():
-                print(f"Deleting directory: {files}")
+                logger.info(f"Deleting directory: {files}")
+                # print(f"Deleting directory: {files}")
                 shutil.rmtree(files)
         except Exception as e:
-            print(f"Error deleting file tree: {e.with_traceback}")
+            logger.exception(f"Error deleting file tree: {e.with_traceback}")
+            # print(f"Error deleting file tree: {e.with_traceback}")
             continue
     return
 
@@ -160,45 +154,67 @@ def main() -> int:
     zip_files = list(SOURCE_DIRECTORY.glob("*.zip"))
 
     if not zip_files:
-        print("No zips to unpack. Exiting\n")
+        cleanup_dir(SOURCE_DIRECTORY)
+        logger.info("No zips to unpack. Exiting\n")
+        # print("No zips to unpack. Exiting\n")
         return 0
 
     for zip_path in zip_files:
         unpack_folder = TEMP_FILE_DIRECTORY / zip_path.stem
         if unpack_folder.exists():
-            print(f"Unpacked album already exists: {unpack_folder}")
+            logger.info(f"Unpacked album already exists: {unpack_folder}")
+            # print(f"Unpacked album already exists: {unpack_folder}")
         else:
             try:
-                print(f"Creating dir at: {unpack_folder}")
+                logger.info(f"Creating dir at: {unpack_folder}")
+                # print(f"Creating dir at: {unpack_folder}")
                 unpack_folder.mkdir(exist_ok=True)
                 safe_extract(zip_path, unpack_folder)
 
             except Exception as e:
-                print(f"Error extracting album: {e.with_traceback}")
+                logger.exception(f"Error extracting album: {e.with_traceback}")
+                # print(f"Error extracting album: {e.with_traceback}")
                 return 1
         artist, album = zip_path.stem.split(" - ")
         album_destination = DESTINATION_DIRECTORY / artist / album
 
         if should_skip_album(zip_path, album_destination) is True:
-            print(
+            logger.info(
                 f"Album being skipped due to already being in library: {album_destination}"
             )
+            # print(
+            #     f"Album being skipped due to already being in library: {album_destination}"
+            # )
         else:
-            print(f"Album does NOT exist in library: {album_destination}")
+            logger.info(f"Album does NOT exist in library: {album_destination}")
+            # print(f"Album does NOT exist in library: {album_destination}")
 
         try:
             move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
-            print(f"{album} moved successfully.")
+            logger.info(f"{album} moved successfully.")
+            # print(f"{album} moved successfully.")
         except Exception as e:
-            print(f"Error moving {album}: {e.with_traceback}")
+            logger.exception(f"Error moving {album}: {e.with_traceback}")
+            # print(f"Error moving {album}: {e.with_traceback}")
             return 1
 
     cleanup_dir(SOURCE_DIRECTORY)
-    print("Directory Cleaned.")
+    logger.info("Directory Cleaned.")
+    # print("Directory Cleaned.")
     return 0
 
 
 if __name__ == "__main__":
-    # main()
-    sanitize_name("test")
+    # LOGS
+    filepath = Path.cwd() / "logs" / "albumextractor.log"
+    logger = logging.getLogger(__name__)
+
+    logging.basicConfig(
+        filename=filepath,
+        format="%(asctime)s, %(levelname)s, " "%(funcName)s, %(lineno)d, %(message)s",
+        encoding="utf-8",
+        level=logging.DEBUG,
+    )
+
+    main()
     logging.shutdown()
