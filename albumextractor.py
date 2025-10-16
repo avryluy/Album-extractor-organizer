@@ -11,6 +11,9 @@ SOURCE_DIRECTORY = USER_HOME / "Desktop" / "Music_Zips"
 TEMP_FILE_DIRECTORY = SOURCE_DIRECTORY / ".temp"
 DESTINATION_DIRECTORY = USER_HOME / "Music"
 
+file_type_pattern = re.compile(
+    r"^.*\.(jpg|JPG|png|PNG|flac|FLAC|mp3|MP3|wav|WAV|ogg|OGG|aiff|AIFF|txt|)$"
+)
 
 # FUNC
 
@@ -52,6 +55,9 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
                     str(member_path.resolve()).startswith(str(extract_to.resolve()))
                 ):
                     raise Exception(f"Paths not valid: {zip_path.name}: {member}")
+
+                if re.match(file_type_pattern, member) is None:
+                    raise Exception(f"File type not supported. {member}")
                 # print(f"Paths valid: {zip_path.name}: {member}")
             zf.extractall(extract_to)
             print(f"{zf.filename} extracted.")
@@ -108,13 +114,24 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
     return
 
 
-def cleanup_temp_files():
+def cleanup_dir(path: Path) -> None:
+
+    for files in path.rglob("*"):
+        try:
+            if files.is_file():
+                print(f"Deleting file: {files}")
+                os.remove(files)
+            elif files.is_dir():
+                print(f"Deleting directory: {files}")
+                shutil.rmtree(files)
+        except Exception as e:
+            print(f"Error deleting file tree: {e.with_traceback}")
+            continue
     return
 
 
 # PROGRAM
 def main() -> int:
-
     if not (SOURCE_DIRECTORY.exists()):
         SOURCE_DIRECTORY.mkdir()
     if not (TEMP_FILE_DIRECTORY.exists()):
@@ -138,9 +155,10 @@ def main() -> int:
 
             except Exception as e:
                 print(f"Error extracting album: {e.with_traceback}")
+                return 1
         artist, album = zip_path.stem.split(" - ")
         album_destination = DESTINATION_DIRECTORY / artist / album
-        # print(f"Pull aritst from zip_path var: {artist}")
+
         if should_skip_album(zip_path, album_destination) is True:
             print(
                 f"Album being skipped due to already being in library: {album_destination}"
@@ -148,7 +166,16 @@ def main() -> int:
         else:
             print(f"Album does NOT exist in library: {album_destination}")
 
-        move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
+        try:
+            move_album_contents(unpack_folder, DESTINATION_DIRECTORY)
+            print(f"{album} moved successfully.")
+        except Exception as e:
+            print(f"Error moving {album}: {e.with_traceback}")
+            return 1
+
+    cleanup_dir(SOURCE_DIRECTORY)
+    print("Directory Cleaned.")
+
     return 0
 
 
