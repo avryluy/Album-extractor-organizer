@@ -2,7 +2,20 @@ from pathlib import Path
 import zipfile
 import shutil
 import re
+import logging
+
 import os as os
+
+# LOGS
+filepath = Path.cwd() / "logs" / "albumextractor.log"
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    filename=filepath,
+    format="%(asctime)s, %(levelname)s, " "%(funcName)s, %(lineno)d, %(message)s",
+    encoding="utf-8",
+    level=logging.DEBUG,
+)
 
 
 # VARIABLES
@@ -18,8 +31,15 @@ file_type_pattern = re.compile(
 # FUNC
 
 
+def logger_init() -> logging.Logger:
+    return logger
+
+
 def sanitize_name(name: str) -> str:
     """Cleans folder and file names for filesystem safety."""
+    logger.critical(
+        "test message in the sanitize name func\nasldkjfalsdfal;sdflaksdjflaksjerlkjsdf"
+    )
     return re.sub(r'[<>:"/\\|?*]', "_", name.strip())
 
 
@@ -175,9 +195,10 @@ def main() -> int:
 
     cleanup_dir(SOURCE_DIRECTORY)
     print("Directory Cleaned.")
-
     return 0
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    sanitize_name("test")
+    logging.shutdown()
