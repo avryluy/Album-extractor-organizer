@@ -1,12 +1,11 @@
 from pathlib import Path
-import zipfile
-import shutil
-import re
+from zipfile import ZipFile
+from shutil import move, rmtree
+from re import sub, compile as re_compile, match
+from os import name as os_name, remove as os_remove
 import logging
 
-import os as os
-
-system_type = os.name
+system_type = os_name
 
 # VARIABLES
 if system_type == "nt":
@@ -20,7 +19,7 @@ elif system_type == "posix":
     TEMP_FILE_DIRECTORY = SOURCE_DIRECTORY / ".temp"
     DESTINATION_DIRECTORY = CURRENT_DIRECTORY / "Music"
 
-file_type_pattern = re.compile(
+file_type_pattern = re_compile(
     r"^.*\.(jpg|JPG|png|PNG|flac|FLAC|mp3|MP3|wav|WAV|ogg|OGG|aiff|AIFF|txt|)$"
 )
 
@@ -29,7 +28,7 @@ file_type_pattern = re.compile(
 
 def sanitize_name(name: str) -> str:
     """Cleans folder and file names for filesystem safety."""
-    return re.sub(r'[<>:"/\\|?*]', "_", name.strip())
+    return sub(r'[<>:"/\\|?*]', "_", name.strip())
 
 
 def get_dir_size(path: Path) -> int:
@@ -44,7 +43,7 @@ def get_dir_size(path: Path) -> int:
 def get_zip_size(zipPath: Path) -> int:
     total = 0
 
-    with zipfile.ZipFile(zipPath, "r") as zf:
+    with ZipFile(zipPath, "r") as zf:
         for info in zf.infolist():
             total += info.file_size
     return total
@@ -59,7 +58,7 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
     try:
 
         # open zip and extract
-        with zipfile.ZipFile(zip_path, "r") as zf:
+        with ZipFile(zip_path, "r") as zf:
             for member in zf.namelist():
                 member_path = extract_to / member
                 if not (
@@ -68,7 +67,7 @@ def safe_extract(zip_path: Path, extract_to: Path) -> None:
                     logger.exception(f"Paths not valid: {zip_path.name}: {member}")
                     raise Exception(f"Paths not valid: {zip_path.name}: {member}")
 
-                if re.match(file_type_pattern, member) is None:
+                if match(file_type_pattern, member) is None:
                     logger.exception(f"File type not supported. {member}")
                     raise Exception(f"File type not supported. {member}")
 
@@ -129,7 +128,7 @@ def move_album_contents(temp_file_path: Path, library_path: Path) -> None:
             # print(f"File {member.name} exists.\nSkipping...\n")
         logger.info(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
         # print(f"Moving file {member.name}\n...From {member}\n...To {track_path}")
-        shutil.move(member, track_path)
+        move(member, track_path)
     return
 
 
@@ -140,11 +139,11 @@ def cleanup_dir(path: Path) -> None:
             if files.is_file():
                 logger.info(f"Deleting file: {files}")
                 # print(f"Deleting file: {files}")
-                os.remove(files)
+                os_remove(files)
             elif files.is_dir():
                 logger.info(f"Deleting directory: {files}")
                 # print(f"Deleting directory: {files}")
-                shutil.rmtree(files)
+                rmtree(files)
         except Exception as e:
             logger.exception(f"Error deleting file tree: {e.with_traceback}")
             # print(f"Error deleting file tree: {e.with_traceback}")
