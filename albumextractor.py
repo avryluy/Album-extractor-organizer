@@ -8,14 +8,14 @@ import os as os
 
 system_type = os.name
 
+# VARIABLES
 if system_type == "nt":
-    # VARIABLES
     USER_HOME = Path.home()
     SOURCE_DIRECTORY = USER_HOME / "Desktop" / "Music_Zips"
     TEMP_FILE_DIRECTORY = SOURCE_DIRECTORY / ".temp"
     DESTINATION_DIRECTORY = USER_HOME / "Music"
 elif system_type == "posix":
-    CURRENT_DIRECTORY = Path.cwd().parent
+    CURRENT_DIRECTORY = Path.cwd().parent.parent
     SOURCE_DIRECTORY = CURRENT_DIRECTORY / "Music" / "Zips"
     TEMP_FILE_DIRECTORY = SOURCE_DIRECTORY / ".temp"
     DESTINATION_DIRECTORY = CURRENT_DIRECTORY / "Music"
